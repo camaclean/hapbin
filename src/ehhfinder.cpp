@@ -123,9 +123,9 @@ void EHHFinder::calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType*
         {
             continue;
         }
-        else if (count < m_brTerm)
+        else if (count <= m_brTerm)
         {
-            ++termCts[count];
+            ++termCts[count-1];
             continue;
         }
         else
@@ -174,7 +174,7 @@ void EHHFinder::calcBranchXPEHH(HapMap* hmA, HapMap* hmB, std::size_t currLine, 
         {
             continue;
         } 
-        else if (numPooled < m_brTerm)
+        else if (numPooled <= m_brTerm)
         {
             if (numA != 0)
                 ++m_term0countsTmp[numA-1];
@@ -526,8 +526,9 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
         
         for(std::size_t i = 1; i <= m_brTerm; ++i)
         {
-            stats.probs += i*i*m_term0counts[i-1]*probSingle;
-            stats.probsNot += i*i*m_term1counts[i-1]*probNotSingle;
+            //std::cout << i << " " << i*i*m_term0counts[i-1]*probSingle << " " << m_term0counts[i-1] << std::endl;
+            stats.probs += i*i*m_term1counts[i-1]*probSingle;
+            stats.probsNot += i*i*m_term0counts[i-1]*probNotSingle;
         }
 
         if (lastProbs > m_cutoff + 1e-15)
@@ -565,8 +566,8 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
         
         for(std::size_t i = 1; i <= m_brTerm; ++i)
         {
-            stats.probs += i*i*m_term0counts[i-1]*probSingle;
-            stats.probsNot += i*i*m_term1counts[i-1]*probNotSingle;
+            stats.probs += i*i*m_term1counts[i-1]*probSingle;
+            stats.probsNot += i*i*m_term0counts[i-1]*probNotSingle;
         }
         
         if (lastProbs > m_cutoff + 1e-15) {
