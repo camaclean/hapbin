@@ -21,7 +21,7 @@
 #include "hapmap.hpp"
 #include <algorithm>
 
-EHHFinder::EHHFinder(std::size_t snpDataSizeA, std::size_t snpDataSizeB, std::size_t maxBreadth, double cutoff, double minMAF, double scale)
+EHHFinder::EHHFinder(std::size_t snpDataSizeA, std::size_t snpDataSizeB, std::size_t maxBreadth, double cutoff, double minMAF, double scale, std::size_t brTerm)
     : m_maxSnpDataSize(snpDataSizeA)
     , m_maxBreadth(maxBreadth)
     , m_bufferSize(snpDataSizeA*maxBreadth)
@@ -34,11 +34,19 @@ EHHFinder::EHHFinder(std::size_t snpDataSizeA, std::size_t snpDataSizeB, std::si
     , m_ehhA{}
     , m_ehhB{}
     , m_ehhP{}
+    , m_brTerm{brTerm}
+    , m_term0counts{new size_t[brTerm]()}
+    , m_term1counts{new size_t[brTerm]()}
+    , m_termPooledCounts{new size_t[brTerm]()}
+    , m_term0countsTmp{new size_t[brTerm]()}
+    , m_term1countsTmp{new size_t[brTerm]()}
+    , m_termPooledCountsTmp{new size_t[brTerm]()}
 {
     m_parent0 = reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, snpDataSizeA*m_maxBreadth*sizeof(HapMap::PrimitiveType)));
     m_parent1 = reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, snpDataSizeB*m_maxBreadth*sizeof(HapMap::PrimitiveType)));
     m_branch0 = reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, snpDataSizeA*m_maxBreadth*sizeof(HapMap::PrimitiveType)));
     m_branch1 = reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, snpDataSizeB*m_maxBreadth*sizeof(HapMap::PrimitiveType)));
+    
 }
 
 /**
@@ -53,9 +61,14 @@ void EHHFinder::setInitial(std::size_t focus, std::size_t line)
     m_parent1count = 2ULL;
     m_branch0count = 0ULL;
     m_branch1count = 0ULL;
-    m_single0count = 0ULL;
-    m_single1count = 0ULL;
-    
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term0counts[i] = 0ULL;
+    }
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term1counts[i] = 0ULL;
+    }
 
     for (int j = 0; j < m_snpDataSizeA; ++j)
     {
@@ -91,7 +104,7 @@ void EHHFinder::setInitialXPEHH(std::size_t focus)
     }
 }
 
-void EHHFinder::calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, double &probs, std::size_t& singlecount, bool* overflow)
+void EHHFinder::calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, double &probs, std::size_t* termCts, bool* overflow)
 {
     HapMap::PrimitiveType* mapData = hm->rawData();
     std::size_t snpDataSize = hm->snpDataSize();
@@ -110,9 +123,9 @@ void EHHFinder::calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType*
         {
             continue;
         }
-        else if (count == 1)
+        else if (count < m_brTerm)
         {
-            ++singlecount;
+            ++termCts[count];
             continue;
         }
         else
@@ -139,7 +152,7 @@ void EHHFinder::calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType*
     branchcount = bcnt;
 }
 
-void EHHFinder::calcBranchXPEHH(HapMap* hmA, HapMap* hmB, std::size_t currLine, std::size_t& single0,  std::size_t& single1, bool* overflow)
+void EHHFinder::calcBranchXPEHH(HapMap* hmA, HapMap* hmB, std::size_t currLine, bool* overflow)
 {
     for(std::size_t i = 0; i < m_parent0count; ++i)
     {
@@ -161,10 +174,12 @@ void EHHFinder::calcBranchXPEHH(HapMap* hmA, HapMap* hmB, std::size_t currLine, 
         {
             continue;
         } 
-        else if (numPooled == 1)
+        else if (numPooled < m_brTerm)
         {
-            single0 += numA;
-            single1 += numB;
+            if (numA != 0)
+                ++m_term0countsTmp[numA-1];
+            if (numB != 0)
+                ++m_term1countsTmp[numB-1];
             continue;
         } 
         else
@@ -211,17 +226,20 @@ void EHHFinder::calcBranchesXPEHH(std::size_t currLine)
 {
     bool overflow;
     bool realloced = false;
-    std::size_t single0{}, single1{};
     m_ehhA = 0.0;
     m_ehhB = 0.0;
     m_ehhP = 0.0;
     while (true)
     {
         overflow = false;
-        single0 = 0; single1 = 0;
+        for(std::size_t i = 0; i < m_brTerm; ++i)
+        {
+            m_term0countsTmp[i] = 0ULL;
+            m_term1countsTmp[i] = 0ULL;
+        }
         m_branch0count = 0;
         m_branch1count = 0;
-        calcBranchXPEHH(m_hmA, m_hmB, currLine, single0, single1, &overflow);
+        calcBranchXPEHH(m_hmA, m_hmB, currLine, &overflow);
         if (overflow)
         {
             m_maxBreadth += 500;
@@ -241,8 +259,11 @@ void EHHFinder::calcBranchesXPEHH(std::size_t currLine)
         m_parent0 = reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, m_snpDataSizeA*m_maxBreadth*sizeof(HapMap::PrimitiveType)));
         m_parent1 = reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, m_snpDataSizeB*m_maxBreadth*sizeof(HapMap::PrimitiveType)));
     }
-    m_single0count += single0;
-    m_single1count += single1;
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term0counts[i] += m_term0countsTmp[i];
+        m_term1counts[i] += m_term1countsTmp[i];
+    }
     m_parent0count = m_branch0count;
     m_parent1count = m_branch1count;
     m_branch0count = 0ULL;
@@ -275,8 +296,11 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
     m_parent1count = 2ULL;
     m_branch0count = 0ULL;
     m_branch1count = 0ULL;
-    m_single0count = 0ULL;
-    m_single1count = 0ULL;
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term0counts[i] = 0ULL;
+        m_term1counts[i] = 0ULL;
+    }
     std::pair<EHH,EHH> ret;
     ret.first.index = focus;
     for(std::size_t i = 0; i < m_snpDataSizeA; ++i)
@@ -304,8 +328,11 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
     
     setInitialXPEHH(focus);
     calcBranchesXPEHH(focus-1);
-    m_single0count = 0ULL;
-    m_single1count = 0ULL;
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term0counts[i] = 0ULL;
+        m_term1counts[i] = 0ULL;
+    }
     if (focus > 1)
     {
         for (std::size_t currLine = focus - 2;; --currLine)
@@ -317,9 +344,12 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
             
             calcBranchesXPEHH(currLine);
             
-            m_ehhA += probASingle*m_single0count;
-            m_ehhB += probBSingle*m_single1count;
-            m_ehhP += probPSingle*(m_single0count+m_single1count);
+            for(std::size_t i = 1; i <= m_brTerm; ++i)
+            {
+                m_ehhA += i*i*m_term0counts[i-1]*probASingle;
+                m_ehhB += i*i*m_term1counts[i-1]*probBSingle;
+                m_ehhP += i*i*(m_term0counts[i-1]+m_term1counts[i-1])*probPSingle;
+            }
             
             if (lastEhhP <= m_cutoff + 1e-15)
                 break;
@@ -330,7 +360,7 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
             lastEhhB = m_ehhB;
             lastEhhP = m_ehhP;
             
-            if ((m_single0count+m_single1count) == (hmA->snpLength()+hmB->snpLength()))
+            if (m_parent0count == 0 && m_parent1count == 0)
                 break;
             if(currLine == 0)
                 return std::pair<EHH,EHH>();
@@ -346,8 +376,11 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
     
     setInitialXPEHH(focus);
     calcBranchesXPEHH(focus+1);
-    m_single0count = 0ULL;
-    m_single1count = 0ULL;
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term0counts[i] = 0ULL;
+        m_term1counts[i] = 0ULL;
+    }
     for (std::size_t currLine = focus + 2; currLine < hmA->numSnps(); ++currLine)
     {
         double scale = (double)(m_scale) / (double)(hmA->physicalPosition(currLine-1) - hmA->physicalPosition(currLine-2));
@@ -356,9 +389,12 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
         
         calcBranchesXPEHH(currLine);
         
-        m_ehhA += probASingle*m_single0count;
-        m_ehhB += probBSingle*m_single1count;
-        m_ehhP += probPSingle*(m_single0count+m_single1count);
+        for(std::size_t i = 1; i <= m_brTerm; ++i)
+        {
+            m_ehhA += i*i*m_term0counts[i-1]*probASingle;
+            m_ehhB += i*i*m_term1counts[i-1]*probBSingle;
+            m_ehhP += i*i*(m_term0counts[i-1]+m_term1counts[i-1])*probPSingle;
+        }
         
         if (lastEhhP <= m_cutoff + 1e-15)
             break;
@@ -369,7 +405,7 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
         lastEhhB = m_ehhB;
         lastEhhP = m_ehhP;
         
-        if ((m_single0count+m_single1count) == (hmA->snpLength()+hmB->snpLength()))
+        if (m_parent0count == 0 && m_parent1count == 0)
             break;
         if (currLine == hmA->numSnps()-1)
             return std::pair<EHH,EHH>();
@@ -381,13 +417,15 @@ void EHHFinder::calcBranches(HapMap* hapmap, std::size_t focus, std::size_t curr
 {
     bool overflow;
     bool realloced = false;
-    std::size_t single0{};
-    std::size_t single1{};
     while(true)
     {
         overflow = false;
-        single0 = 0; single1 = 0;
-        calcBranch(hapmap, focus, m_parent0, m_parent0count, m_branch0, m_branch0count, currLine, freq0, stats.probsNot, single0, &overflow);
+        for(std::size_t i = 0; i < m_brTerm; ++i)
+        {
+            m_term0countsTmp[i] = 0ULL;
+            m_term1countsTmp[i] = 0ULL;
+        }
+        calcBranch(hapmap, focus, m_parent0, m_parent0count, m_branch0, m_branch0count, currLine, freq0, stats.probsNot, m_term0countsTmp, &overflow);
         if(overflow)
         {
             m_maxBreadth += 100;
@@ -399,7 +437,7 @@ void EHHFinder::calcBranches(HapMap* hapmap, std::size_t focus, std::size_t curr
             continue;
         }
         overflow = false;
-        calcBranch(hapmap, focus, m_parent1, m_parent1count, m_branch1, m_branch1count, currLine, freq1, stats.probs, single1, &overflow);
+        calcBranch(hapmap, focus, m_parent1, m_parent1count, m_branch1, m_branch1count, currLine, freq1, stats.probs, m_term1countsTmp, &overflow);
         if(overflow)
         {
             m_maxBreadth += 100;
@@ -423,8 +461,11 @@ void EHHFinder::calcBranches(HapMap* hapmap, std::size_t focus, std::size_t curr
     m_parent1count = m_branch1count;
     m_branch0count = 0ULL;
     m_branch1count = 0ULL;
-    m_single0count += single0;
-    m_single1count += single1;
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term0counts[i] += m_term0countsTmp[i];
+        m_term1counts[i] += m_term1countsTmp[i];
+    }
     std::swap(m_parent0, m_branch0);
     std::swap(m_parent1, m_branch1);
 }
@@ -435,8 +476,11 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
     m_parent1count = 2ULL;
     m_branch0count = 0ULL;
     m_branch1count = 0ULL;
-    m_single0count = 0ULL;
-    m_single1count = 0ULL;
+    for(std::size_t i = 0; i < m_brTerm; ++i)
+    {
+        m_term0counts[i] = 0ULL;
+        m_term1counts[i] = 0ULL;
+    }
     m_hdA = hapmap->rawData();
     m_snpDataSizeA = hapmap->snpDataSize();
 #if VEC==4
@@ -480,8 +524,11 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
         
         calcBranches(hapmap, focus, currLine, freq0, freq1, stats);
         
-        stats.probs +=  probSingle*m_single1count;
-        stats.probsNot += probNotSingle*m_single0count;
+        for(std::size_t i = 1; i <= m_brTerm; ++i)
+        {
+            stats.probs += i*i*m_term0counts[i-1]*probSingle;
+            stats.probsNot += i*i*m_term1counts[i-1]*probNotSingle;
+        }
 
         if (lastProbs > m_cutoff + 1e-15)
             ret.iHH_d += (hapmap->geneticPosition(currLine+2)-hapmap->geneticPosition(currLine+1))*(lastProbs + stats.probs)*scale*0.5;    
@@ -493,10 +540,9 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
         if (ehhsave)
             ret.upstream.push_back(std::move(stats));
         
-        
         if (lastProbs <= m_cutoff + 1e-15 && lastProbsNot <= m_cutoff + 1e-15)
             break;
-        if ((m_single0count+m_single1count) == hapmap->snpLength())
+        if (m_parent0count == 0 && m_parent1count == 0)
             break;
         if (currLine == 0)
         {
@@ -517,8 +563,11 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
         
         calcBranches(hapmap, focus, currLine, freq0, freq1, stats);
         
-        stats.probs +=  probSingle*m_single1count;
-        stats.probsNot += probNotSingle*m_single0count;
+        for(std::size_t i = 1; i <= m_brTerm; ++i)
+        {
+            stats.probs += i*i*m_term0counts[i-1]*probSingle;
+            stats.probsNot += i*i*m_term1counts[i-1]*probNotSingle;
+        }
         
         if (lastProbs > m_cutoff + 1e-15) {
             ret.iHH_d += (hapmap->geneticPosition(currLine-1)-hapmap->geneticPosition(currLine-2))*(lastProbs + stats.probs)*scale*0.5;
@@ -532,7 +581,9 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
         if (ehhsave)
             ret.downstream.push_back(std::move(stats));
         
-        if (lastProbs <= m_cutoff + 1e-15 && lastProbsNot <= m_cutoff + 1e-15 || (m_single0count+m_single1count) == hapmap->snpLength())
+        if (lastProbs <= m_cutoff + 1e-15 && lastProbsNot <= m_cutoff + 1e-15)
+            break;
+        if (m_parent0count == 0 && m_parent1count == 0)
             break;
         
         if (currLine == hapmap->numSnps()-1)

@@ -25,13 +25,13 @@
 class EHHFinder
 {
 public:
-    EHHFinder(std::size_t SnpDataSizeA, std::size_t snpDataSizeB, std::size_t maxBreadth, double cutoff, double minMAF, double scale);
+    EHHFinder(std::size_t SnpDataSizeA, std::size_t snpDataSizeB, std::size_t maxBreadth, double cutoff, double minMAF, double scale, std::size_t brTerm);
     EHH find(HapMap* hapmap, std::size_t focus, bool ehhsave = false);
     std::pair<EHH,EHH> findXPEHH(HapMap* hmA, HapMap *hmB, std::size_t focus);
     ~EHHFinder();
 protected:
-    inline void calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, double& probs, std::size_t& singlecount, bool* overflow);
-    inline void calcBranchXPEHH(HapMap* hmA, HapMap* hmB, std::size_t currLine, std::size_t& single0, std::size_t& single1, bool* overflow);
+    inline void calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, double& probs, std::size_t* termCts, bool* overflow);
+    inline void calcBranchXPEHH(HapMap* hmA, HapMap* hmB, std::size_t currLine, bool* overflow);
     inline void setInitial(std::size_t focus, std::size_t line);
     inline void setInitialXPEHH(std::size_t focus);
     inline void calcBranches(HapMap* hapmap, std::size_t focus, std::size_t currLine, double freq0, double freq1, HapStats& stats);
@@ -53,15 +53,19 @@ protected:
     std::size_t m_parent1count;
     std::size_t m_branch0count;
     std::size_t m_branch1count;
-    std::size_t m_single0count;
-    std::size_t m_single1count;
-    std::size_t m_singlePooledCount;
+    std::size_t* m_term0counts;
+    std::size_t* m_term1counts;
+    std::size_t* m_termPooledCounts;
+    std::size_t* m_term0countsTmp;
+    std::size_t* m_term1countsTmp;
+    std::size_t* m_termPooledCountsTmp;
     double m_freqA;
     double m_freqB;
     double m_freqP;
     double m_ehhA;
     double m_ehhB;
     double m_ehhP;
+    std::size_t m_brTerm;
     std::size_t m_snpDataSizeA;
     std::size_t m_snpDataSizeB;
     std::size_t m_snpDataSizeULL_A;

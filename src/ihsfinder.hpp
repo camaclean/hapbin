@@ -38,7 +38,7 @@ public:
     using FreqVecMap = std::map<double, std::vector<double>>;
     using StatsMap = std::map<double, Stats>;
     
-    IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor);
+    IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor, std::size_t brTerm);
     FreqVecMap unStdIHSByFreq() const { return m_unStandIHSByFreq; }
     LineMap    unStdIHSByLine() const { return m_unStandIHSByLine; }
     LineMap    freqsByLine() const    { return m_freqsByLine; }
@@ -54,6 +54,7 @@ protected:
     void processXPEHH(std::pair< EHH, EHH > e, size_t line);
     
     std::size_t m_snpLength;
+    std::size_t m_brTerm;
     double m_cutoff;
     double m_minMAF;
     double m_scale;

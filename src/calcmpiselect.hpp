@@ -30,7 +30,7 @@
 #include <omp.h>
 #endif
 
-void calcIhsMpi(const std::string& hapfile, const std::string& mapfile, const std::string& outfile, double cutoff, double minMAF, double scale, double binFactor)
+void calcIhsMpi(const std::string& hapfile, const std::string& mapfile, const std::string& outfile, double cutoff, double minMAF, double scale, double binFactor, std::size_t brTerm)
 {
     std::cout << "Calculating iHS using MPI." << std::endl;
     HapMap hap;
@@ -41,7 +41,7 @@ void calcIhsMpi(const std::string& hapfile, const std::string& mapfile, const st
     std::cout << "Loaded " << hap.numSnps() << " snps." << std::endl;
     std::cout << "Haplotype count: " << hap.snpLength() << std::endl;
     hap.loadMap(mapfile.c_str());
-    IHSFinder *ihsfinder = new IHSFinder(hap.snpLength(), cutoff, minMAF, scale, binFactor);
+    IHSFinder *ihsfinder = new IHSFinder(hap.snpLength(), cutoff, minMAF, scale, binFactor, brTerm);
     mpirpc::Manager *manager = new mpirpc::Manager();
     int procsToGo = manager->numProcs();
     std::cout << "Processes: " << procsToGo << std::endl;
@@ -135,7 +135,7 @@ void calcIhsMpi(const std::string& hapfile, const std::string& mapfile, const st
     delete manager;
 }
 
-void calcXpehhMpi(const std::string& hapA, const std::string& hapB, const std::string& mapfile, const std::string& outfile, double cutoff, double minMAF, double scale, double binFactor)
+void calcXpehhMpi(const std::string& hapA, const std::string& hapB, const std::string& mapfile, const std::string& outfile, double cutoff, double minMAF, double scale, double binFactor, std::size_t brTerm)
 {
     std::cout << "Calculating XPEHH using MPI." << std::endl;
     HapMap mA, mB;
@@ -152,7 +152,7 @@ void calcXpehhMpi(const std::string& hapA, const std::string& hapB, const std::s
     std::cout << "Population A haplotype count: " << mA.snpLength() << std::endl;
     std::cout << "Population B haplotype count: " << mB.snpLength() << std::endl;
     mA.loadMap(mapfile.c_str());
-    IHSFinder *ihsfinder = new IHSFinder(mA.snpLength(), cutoff, minMAF, scale, binFactor);
+    IHSFinder *ihsfinder = new IHSFinder(mA.snpLength(), cutoff, minMAF, scale, binFactor, brTerm);
     mpirpc::Manager *manager = new mpirpc::Manager();
     int procsToGo = manager->numProcs();
     std::cout << "Processes: " << procsToGo << std::endl;

@@ -41,16 +41,17 @@ int main(int argc, char** argv)
     Argument<double> cutoff('c', "cutoff", "EHH cutoff value (default: 0.05)", false, false, 0.05);
     Argument<double> minMAF('f', "minmaf", "Minimum allele frequency (default: 0.05)", false, false, 0.05);
     Argument<double> binfac('b', "bin", "Frequency bin size (default: 0.02)", false, false, 0.02);
+    Argument<unsigned long long> brTerm('t', "minbranch", "Minimum branch population (default: 1)", false, false, 1ULL);
     Argument<unsigned long long> scale('s', "scale", "Gap scale parameter in bp, used to scale gaps > scale parameter as in Voight, et al.", false, false, 20000);
     Argument<std::string> outfile('o', "out", "Output file", false, false, "out.txt");
-    ArgParse argparse({&help, &hap, &map, &outfile, &cutoff, &minMAF, &scale, &binfac}, "Usage: ihsbin --map input.map --hap input.hap [--ascii] [--out outfile]");
+    ArgParse argparse({&help, &hap, &map, &outfile, &cutoff, &minMAF, &scale, &binfac, &brTerm}, "Usage: ihsbin --map input.map --hap input.hap [--ascii] [--out outfile]");
     if (!argparse.parseArguments(argc, argv))
         return 1;
     
     std::size_t numSnps = HapMap::querySnpLength(hap.value().c_str());
     std::cout << "Chromosomes per SNP: " << numSnps << std::endl;
     
-    calcIhs(hap.value(), map.value(), outfile.value(), cutoff.value(), minMAF.value(), (double) scale.value(), binfac.value());
+    calcIhs(hap.value(), map.value(), outfile.value(), cutoff.value(), minMAF.value(), (double) scale.value(), binfac.value(), brTerm.value());
 #if MPI_FOUND
     MPI_Barrier(MPI_COMM_WORLD);
 

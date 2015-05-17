@@ -19,8 +19,8 @@
 
 #include "ihsfinder.hpp"
 
-IHSFinder::IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor)
-    : m_snpLength(snpLength), m_cutoff(cutoff), m_minMAF(minMAF), m_scale(scale), m_binFactor(binFactor), m_counter{}
+IHSFinder::IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor, std::size_t brTerm)
+    : m_snpLength(snpLength), m_cutoff(cutoff), m_minMAF(minMAF), m_scale(scale), m_binFactor(binFactor), m_counter{}, m_brTerm{brTerm}
 {}
 
 void IHSFinder::processEHH(const EHH& ehh, std::size_t line)
@@ -104,7 +104,7 @@ void IHSFinder::runXpehh(HapMap* mA, HapMap* mB, std::size_t start, std::size_t 
 {
     #pragma omp parallel shared(mA,mB,start,end)
     {
-        EHHFinder finder(mA->snpDataSize(), mB->snpDataSize(), 2000, m_cutoff, m_minMAF, m_scale);
+        EHHFinder finder(mA->snpDataSize(), mB->snpDataSize(), 2000, m_cutoff, m_minMAF, m_scale, m_brTerm);
         #pragma omp for schedule(dynamic,10)
         for(size_t i = start; i < end; ++i)
         {
@@ -125,7 +125,7 @@ void IHSFinder::run(HapMap* map, std::size_t start, std::size_t end)
 {
     #pragma omp parallel shared(map, start, end)
     {
-        EHHFinder finder(map->snpDataSize(), map->snpDataSize(), 2000, m_cutoff, m_minMAF, m_scale);
+        EHHFinder finder(map->snpDataSize(), map->snpDataSize(), 2000, m_cutoff, m_minMAF, m_scale, m_brTerm);
         #pragma omp for schedule(dynamic,10)
         for(size_t i = start; i < end; ++i)
         {

@@ -32,9 +32,10 @@ int main(int argc, char** argv)
     Argument<const char*> map('m', "map", "Map file", false, true, "");
     Argument<double> cutoff('c', "cutoff", "EHH cutoff value (default: 0.05)", false, false, 0.05);
     Argument<double> minMAF('b', "minmaf", "Minimum allele frequency (default: 0.05)", false, false, 0.05);
-    Argument<unsigned long long> scale('s', "scale", "Gap scale parameter in bp, used to scale gaps > scale parameter as in Voight, et al.", false, false, 20000);
+    Argument<unsigned long long> brTerm('t', "minbranch", "Minimum branch population (default: 1)", false, false, 1ULL);
+    Argument<unsigned long long> scale('s', "scale", "Gap scale parameter in bp, used to scale gaps > scale parameter as in Voight, et al.", false, false, 20000ULL);
     Argument<const char*> locus('l', "locus", "Locus", false, true, 0);
-    ArgParse argparse({&help, &hap, &map, &locus, &cutoff, &minMAF, &scale}, "Usage: ehhbin --map input.map --hap input.hap --locus id");
+    ArgParse argparse({&help, &hap, &map, &locus, &cutoff, &minMAF, &scale, &brTerm}, "Usage: ehhbin --map input.map --hap input.hap --locus id");
     argparse.parseArguments(argc, argv);
     //using HapMapType = HapMap<CTCBitset<2*INDIVIDUALS>>;
     using HapMapType = HapMap;
@@ -51,7 +52,7 @@ int main(int argc, char** argv)
         std::cerr << "no locus with the id: " << locus.value() << std::endl;
         return 2;
     }
-    EHHFinder finder(hmap.snpDataSize(), hmap.snpDataSize(), 1000, cutoff.value(), minMAF.value(), (double) scale.value());
+    EHHFinder finder(hmap.snpDataSize(), hmap.snpDataSize(), 1000, cutoff.value(), minMAF.value(), (double) scale.value(), brTerm.value());
     e = finder.find(&hmap, l, true);
     e.printEHH(&hmap);
     std::cout << "iHS: " << log(e.iHH_a/e.iHH_d) << std::endl;
