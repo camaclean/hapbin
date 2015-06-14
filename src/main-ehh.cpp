@@ -35,7 +35,8 @@ int main(int argc, char** argv)
     Argument<unsigned long long> scale('s', "scale", "Gap scale parameter in bp, used to scale gaps > scale parameter as in Voight, et al.", false, false, 20000);
     Argument<const char*> locus('l', "locus", "Locus", false, true, 0);
     ArgParse argparse({&help, &hap, &map, &locus, &cutoff, &minMAF, &scale}, "Usage: ehhbin --map input.map --hap input.hap --locus id");
-    argparse.parseArguments(argc, argv);
+    if (!argparse.parseArguments(argc, argv))
+        return 1;
     //using HapMapType = HapMap<CTCBitset<2*INDIVIDUALS>>;
     using HapMapType = HapMap;
     HapMapType hmap;
