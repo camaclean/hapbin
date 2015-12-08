@@ -272,7 +272,7 @@ void EHHFinder::calcBranchesXPEHH(std::size_t currLine)
     std::swap(m_parent1, m_branch1);
 }
 
-std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t focus)
+std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t focus, std::atomic<unsigned long long>* reachedEnd)
 {
     m_hmA = hmA;
     m_hmB = hmB;
@@ -363,7 +363,10 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
             if (m_parent0count == 0 && m_parent1count == 0)
                 break;
             if(currLine == 0)
+            {
+                ++(*reachedEnd);
                 return std::pair<EHH,EHH>();
+            }
         }
     }
     
@@ -408,7 +411,10 @@ std::pair< EHH, EHH > EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t
         if (m_parent0count == 0 && m_parent1count == 0)
             break;
         if (currLine == hmA->numSnps()-1)
+        {
+            ++(*reachedEnd);
             return std::pair<EHH,EHH>();
+        }
     }
     return ret;
 }
@@ -470,7 +476,7 @@ void EHHFinder::calcBranches(HapMap* hapmap, std::size_t focus, std::size_t curr
     std::swap(m_parent1, m_branch1);
 }
 
-EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
+EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long long>* reachedEnd, std::atomic<unsigned long long>* outsideMaf, bool ehhsave)
 {
     m_parent0count = 2ULL;
     m_parent1count = 2ULL;
@@ -500,11 +506,16 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
     ret.numNot = hapmap->snpLength() - ret.num;
     
     double maxEHH = ret.num/(double)hapmap->snpLength();
-    if (!(maxEHH <= 1.0 - m_minMAF && maxEHH >= m_minMAF)) {
+    if (!(maxEHH <= 1.0 - m_minMAF && maxEHH >= m_minMAF))
+    {
+        ++(*outsideMaf);
         return EHH();
     }
     if (focus < 2)
+    {
+        ++(*reachedEnd);
         return EHH();
+    }
     
     double freq0 = 1.0/(double)ret.numNot;
     double freq1 = 1.0/(double)ret.num;
@@ -547,6 +558,7 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
             break;
         if (currLine == 0)
         {
+            ++(*reachedEnd);
             return EHH();
         }
     }
@@ -588,7 +600,10 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, bool ehhsave)
             break;
         
         if (currLine == hapmap->numSnps()-1)
+        {
+            ++(*reachedEnd);
             return EHH();
+        }
     }
     return ret;
 }
