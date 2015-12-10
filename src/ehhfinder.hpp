@@ -26,20 +26,42 @@
 class EHHFinder
 {
 public:
-    EHHFinder(std::size_t SnpDataSizeA, std::size_t snpDataSizeB, std::size_t maxBreadth, double cutoff, double minMAF, double scale, std::size_t brTerm);
-    EHH find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long long>* reachedEnd, std::atomic<unsigned long long>* outsideMaf, bool ehhsave = false);
-    std::pair<EHH,EHH> findXPEHH(HapMap* hmA, HapMap *hmB, std::size_t focus, std::atomic<unsigned long long>* reachedEnd);
+    EHHFinder(HapMap* hmA,
+              HapMap* hmB,
+              std::size_t maxBreadth,
+              double cutoff,
+              double minMAF,
+              double scale,
+              double brCutoff);
+    EHH find(std::size_t focus,
+             std::atomic<unsigned long long>* reachedEnd,
+             std::atomic<unsigned long long>* outsideMaf,
+             bool ehhsave = false);
+    std::pair<EHH,EHH> findXPEHH(std::size_t focus,
+                                 std::atomic<unsigned long long>* reachedEnd);
     ~EHHFinder();
 protected:
-    inline void calcBranch(HapMap* hm, std::size_t focus, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, double& probs, std::size_t* termCts, bool* overflow);
-    inline void calcBranchXPEHH(HapMap* hmA, HapMap* hmB, std::size_t currLine, bool* overflow);
+    inline void calcBranch(std::size_t focus,
+                           HapMap::PrimitiveType* parent,
+                           std::size_t parentcount,
+                           HapMap::PrimitiveType* branch,
+                           std::size_t& branchcount,
+                           std::size_t currLine,
+                           double freq,
+                           double& probs,
+                           std::size_t* termCts,
+                           std::size_t brTerm,
+                           bool* overflow);
+
+    inline void calcBranchXPEHH(std::size_t currLine,
+                                bool* overflow);
+
     inline void setInitial(std::size_t focus, std::size_t line);
     inline void setInitialXPEHH(std::size_t focus);
-    inline void calcBranches(HapMap* hapmap, std::size_t focus, std::size_t currLine, double freq0, double freq1, HapStats& stats);
+    inline void calcBranches(std::size_t focus, std::size_t currLine, double freq0, double freq1, HapStats& stats);
     inline void calcBranchesXPEHH(std::size_t currLine);
     
     std::size_t m_maxBreadth;
-    std::size_t m_bufferSize;
     HapMap::PrimitiveType *m_parent0;
     HapMap::PrimitiveType *m_parent1;
     HapMap::PrimitiveType *m_branch0;
@@ -49,7 +71,6 @@ protected:
     const double m_cutoff;
     const double m_minMAF;
     const double m_scale;
-    std::size_t m_maxSnpDataSize;
     std::size_t m_parent0count;
     std::size_t m_parent1count;
     std::size_t m_branch0count;
@@ -66,11 +87,16 @@ protected:
     double m_ehhA;
     double m_ehhB;
     double m_ehhP;
-    std::size_t m_brTerm;
+    double m_brCutoff;
+    std::size_t m_brTerm0;
+    std::size_t m_brTerm1;
+    std::size_t m_brTermMax;
     std::size_t m_snpDataSizeA;
     std::size_t m_snpDataSizeB;
     std::size_t m_snpDataSizeULL_A;
     std::size_t m_snpDataSizeULL_B;
+    std::size_t m_snpLengthA;
+    std::size_t m_snpLengthB;
     HapMap::PrimitiveType *m_hdA;
     HapMap::PrimitiveType *m_hdB;
     HapMap* m_hmA;

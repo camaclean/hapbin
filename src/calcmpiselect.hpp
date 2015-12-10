@@ -30,7 +30,7 @@
 #include <omp.h>
 #endif
 
-void calcIhsMpi(const std::string& hapfile, const std::string& mapfile, const std::string& outfile, double cutoff, double minMAF, double scale, double binFactor, std::size_t brTerm)
+void calcIhsMpi(const std::string& hapfile, const std::string& mapfile, const std::string& outfile, double cutoff, double minMAF, double scale, double binFactor, double brTerm)
 {
     std::cout << "Calculating iHS using MPI." << std::endl;
     HapMap hap;

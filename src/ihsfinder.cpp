@@ -19,8 +19,8 @@
 
 #include "ihsfinder.hpp"
 
-IHSFinder::IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor, std::size_t brTerm)
-    : m_snpLength(snpLength), m_cutoff(cutoff), m_minMAF(minMAF), m_scale(scale), m_binFactor(binFactor), m_counter{}, m_brTerm{brTerm}, m_reachedEnd{}, m_outsideMaf{}, m_nanResults{}
+IHSFinder::IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor, double brCutoff)
+    : m_snpLength(snpLength), m_cutoff(cutoff), m_minMAF(minMAF), m_scale(scale), m_binFactor(binFactor), m_counter{}, m_brCutoff{brCutoff}, m_reachedEnd{}, m_outsideMaf{}, m_nanResults{}
 {}
 
 void IHSFinder::processEHH(const EHH& ehh, std::size_t line)
@@ -115,11 +115,11 @@ void IHSFinder::runXpehh(HapMap* mA, HapMap* mB, std::size_t start, std::size_t 
 {
     #pragma omp parallel shared(mA,mB,start,end)
     {
-        EHHFinder finder(mA->snpDataSize(), mB->snpDataSize(), 2000, m_cutoff, m_minMAF, m_scale, m_brTerm);
+        EHHFinder finder(mA, mB, 2000, m_cutoff, m_minMAF, m_scale, m_brCutoff);
         #pragma omp for schedule(dynamic,10)
         for(size_t i = start; i < end; ++i)
         {
-            std::pair<EHH,EHH> ehh = finder.findXPEHH(mA, mB, i, &m_reachedEnd);
+            std::pair<EHH,EHH> ehh = finder.findXPEHH(i, &m_reachedEnd);
             processXPEHH(ehh, i);
             ++m_counter;
             unsigned long long tmp = m_counter;
@@ -132,15 +132,15 @@ void IHSFinder::runXpehh(HapMap* mA, HapMap* mB, std::size_t start, std::size_t 
     std::cout << std::endl;
 }
 
-void IHSFinder::run(HapMap* map, std::size_t start, std::size_t end)
+void IHSFinder::run(HapMap* hap, std::size_t start, std::size_t end)
 {
-    #pragma omp parallel shared(map, start, end)
+    #pragma omp parallel shared(hap, start, end)
     {
-        EHHFinder finder(map->snpDataSize(), map->snpDataSize(), 2000, m_cutoff, m_minMAF, m_scale, m_brTerm);
+        EHHFinder finder(hap, 0, 2000, m_cutoff, m_minMAF, m_scale, m_brCutoff);
         #pragma omp for schedule(dynamic,10)
         for(size_t i = start; i < end; ++i)
         {
-            EHH ehh = finder.find(map, i, &m_reachedEnd, &m_outsideMaf);
+            EHH ehh = finder.find(i, &m_reachedEnd, &m_outsideMaf);
             processEHH(ehh, i);
             ++m_counter;
             unsigned long long tmp = m_counter;

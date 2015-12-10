@@ -44,7 +44,7 @@ int main(int argc, char** argv)
     Argument<double> cutoff('c', "cutoff", "EHH cutoff value (default: 0.05)", false, false, 0.05);
     Argument<double> minMAF('f', "minmaf", "Minimum allele frequency (default: 0.05)", false, false, 0.05);
     Argument<double> binfac('b', "bin", "Frequency bin size (default: 0.02)", false, false, 0.02);
-    Argument<unsigned long long> brTerm('t', "minbranch", "Minimum branch population (default: 1)", false, false, 1ULL);
+    Argument<double> brTerm('t', "minbranch", "Minimum branch frequency (default: 0.00)", false, false, 0.00);
     Argument<unsigned long long> scale('s', "scale", "Gap scale parameter in bp, used to scale gaps > scale parameter as in Voight, et al.", false, false, 20000);
     Argument<std::string> outfile('o', "out", "Output file", false, false, "out.txt");
     ArgParse argparse({&help, &version, &hap, &map, &outfile, &cutoff, &minMAF, &scale, &binfac, &brTerm}, "Usage: ihsbin --map input.map --hap input.hap [--ascii] [--out outfile]");

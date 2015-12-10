@@ -38,7 +38,7 @@ public:
     using FreqVecMap = std::map<double, std::vector<double>>;
     using StatsMap = std::map<double, Stats>;
     
-    IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor, std::size_t brTerm);
+    IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, double binFactor, double brCutoff);
     FreqVecMap unStdIHSByFreq() const { return m_unStandIHSByFreq; }
     LineMap    unStdIHSByLine() const { return m_unStandIHSByLine; }
     LineMap    freqsByLine() const    { return m_freqsByLine; }
@@ -47,8 +47,8 @@ public:
     unsigned long long numOutsideMaf() const { return m_outsideMaf; }
     unsigned long long numNanResults() const { return m_nanResults; }
     
-    void run(HapMap* map, std::size_t start, std::size_t end);
-    void runXpehh(HapMap* mA, HapMap* mB, std::size_t start, std::size_t end);
+    void run(HapMap* hap, std::size_t start, std::size_t end);
+    void runXpehh(HapMap* hmA, HapMap* hmB, std::size_t start, std::size_t end);
     LineMap normalize();
     
     void addData(const LineMap& freqsBySite, const LineMap& unStandIHSByLine, const FreqVecMap& unStandIHSbyLine, unsigned long long reachedEnd, unsigned long long outsideMaf, unsigned long long nanResults);
@@ -58,7 +58,7 @@ protected:
     void processXPEHH(std::pair< EHH, EHH > e, size_t line);
     
     std::size_t m_snpLength;
-    std::size_t m_brTerm;
+    double m_brCutoff;
     double m_cutoff;
     double m_minMAF;
     double m_scale;

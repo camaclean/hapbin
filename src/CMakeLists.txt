@@ -49,7 +49,7 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 
 find_package(OpenMP)
 
-#add_definitions(-std=c++11 -Wall -O3 -march=corei7)
+#add_definitions(-std=c++11 -Wall -O3 -march=corei7 )
 
 include_directories("${PROJECT_BINARY_DIR}")
 
@@ -64,7 +64,7 @@ else(MPI_FOUND AND USE_MPI)
     set(MPI_CXX_LIBRARIES "")
 endif(MPI_FOUND AND USE_MPI)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${OpenMP_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -ggdb ${OpenMP_CXX_FLAGS}")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
