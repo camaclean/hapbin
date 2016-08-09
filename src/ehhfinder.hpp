@@ -35,7 +35,7 @@ public:
     ~EHHFinder();
 protected:
     template <bool Binom>
-    inline void calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, double& probs, std::size_t& singlecount, std::size_t maxBreadth, bool* overflow);
+    inline void calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, std::size_t branchCutoff, double& probs, std::size_t& singlecount, std::size_t maxBreadth, bool* overflow);
     template <bool Binom>
     inline void calcBranchXPEHH(std::size_t currLine, std::size_t& singleA, std::size_t& singleB, std::size_t& singleP, bool* overflow);
     void setInitial(std::size_t focus, std::size_t line);
@@ -56,6 +56,9 @@ protected:
     HapMap::PrimitiveType m_maskA;
     HapMap::PrimitiveType m_maskB;
     const double m_cutoff;
+    const double m_branchCutoff;
+    std::size_t m_branchCutoff0;
+    std::size_t m_branchCutoff1;
     const double m_minMAF;
     const double m_scale;
     std::size_t m_maxSnpDataSize;

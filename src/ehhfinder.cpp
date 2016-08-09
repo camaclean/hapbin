@@ -32,6 +32,7 @@ EHHFinder::EHHFinder(std::size_t snpDataSizeA, std::size_t snpDataSizeB, std::si
     , m_branch0(reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, (snpDataSizeA+snpDataSizeB)*maxBreadth*sizeof(HapMap::PrimitiveType))))
     , m_branch1(reinterpret_cast<HapMap::PrimitiveType*>(aligned_alloc(128, (snpDataSizeA)*maxBreadth*sizeof(HapMap::PrimitiveType))))
     , m_cutoff(cutoff)
+    , m_branchCutoff(0.0)
     , m_minMAF(minMAF)
     , m_scale(scale)
     , m_maxSnpDataSize(snpDataSizeA)

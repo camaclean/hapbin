@@ -18,7 +18,7 @@
  */
 
 template <bool Binom>
-void EHHFinder::calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, double &probs, std::size_t& singlecount, std::size_t maxBreadth, bool* overflow)
+void EHHFinder::calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, std::size_t branchCutoff, double &probs, std::size_t& singlecount, std::size_t maxBreadth, bool* overflow)
 {
     HapMap::PrimitiveType* mapData = hm->rawData();
     std::size_t snpDataSize = hm->snpDataSize();
@@ -32,8 +32,10 @@ void EHHFinder::calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_
         {
             count += popcount1(leaf[j]);
         }
-        
-        if (Binom && count <= 1)
+        //count -= m_branchCutoff;
+        //if (count < 0) count = 0;
+
+        if (Binom && count <= branchCutoff)
         {
             continue;
         }
@@ -401,7 +403,7 @@ void EHHFinder::calcBranches(HapMap* hapmap, std::size_t focus, std::size_t curr
         if (!Binom)
             single0 = 0;
         stats.probsNot = 0.0;
-        calcBranch<Binom>(hapmap, m_parent0, m_parent0count, m_branch0, m_branch0count, currLine, freq0, stats.probsNot, single0, m_maxBreadth0, &overflow);
+        calcBranch<Binom>(hapmap, m_parent0, m_parent0count, m_branch0, m_branch0count, currLine, freq0, m_branchCutoff0, stats.probsNot, single0, m_maxBreadth0, &overflow);
         if(overflow)
         {
             m_maxBreadth0 += 100;
@@ -423,7 +425,7 @@ void EHHFinder::calcBranches(HapMap* hapmap, std::size_t focus, std::size_t curr
         if (!Binom)
             single1 = 0;
         stats.probs = 0.0;
-        calcBranch<Binom>(hapmap, m_parent1, m_parent1count, m_branch1, m_branch1count, currLine, freq1, stats.probs, single1, m_maxBreadth1, &overflow);
+        calcBranch<Binom>(hapmap, m_parent1, m_parent1count, m_branch1, m_branch1count, currLine, freq1, m_branchCutoff1, stats.probs, single1, m_maxBreadth1, &overflow);
         if(overflow)
         {
             m_maxBreadth1 += 100;
@@ -498,6 +500,11 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long
     double probSingle, probNotSingle;
     if (Binom)
     {
+        /*int c0 = ret.numNot - m_branchCutoff, c1 = ret.num - m_branchCutoff;
+        if (c0 < 0) c0 = 0;
+        if (c1 < 0) c1 = 0;
+        freq0 = 1.0/binom_2(c0);
+        freq1 = 1.0/binom_2(c1);*/
         freq0 = 1.0/binom_2(ret.numNot);
         freq1 = 1.0/binom_2(ret.num);
     }
@@ -508,6 +515,16 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long
         probSingle = freq1*freq1;
         probNotSingle = freq0*freq0;
     }
+    if ((int) (ret.numNot*m_branchCutoff) > 0)
+        m_branchCutoff0 = ret.numNot*m_branchCutoff;
+    else
+        m_branchCutoff0 = 1;
+    if ((int) (ret.num*m_branchCutoff) > 0)
+        m_branchCutoff1 = ret.num*m_branchCutoff;
+    else
+        m_branchCutoff1 = 1;
+
+    //std::cout << "cutoffs: " << m_branchCutoff0 << " " << m_branchCutoff1 << std::endl;
     double lastProbs = 1.0, lastProbsNot = 1.0;
     unsigned long long locusPysPos = hapmap->physicalPosition(focus);
     
@@ -539,7 +556,8 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long
         if (ehhsave)
             ret.upstream.push_back(std::move(stats));
         
-        
+        if (Binom && lastProbs == 0 && lastProbsNot == 0)
+            break;
         if (m_maxExtend != 0 && locusPysPos - currPhysPos > m_maxExtend)
             break;
         if (lastProbs <= m_cutoff - 1e-15 && lastProbsNot <= m_cutoff - 1e-15)
@@ -583,6 +601,8 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long
         if (ehhsave)
             ret.downstream.push_back(std::move(stats));
         
+        if (Binom && lastProbs == 0 && lastProbsNot == 0)
+            break;
         if (lastProbs <= m_cutoff - 1e-15 && lastProbsNot <= m_cutoff - 1e-15 || (m_single0count+m_single1count) == hapmap->snpLength())
             break;
         if (m_maxExtend != 0 && currPhysPos - locusPysPos > m_maxExtend)
