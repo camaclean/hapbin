@@ -27,10 +27,15 @@ void EHHFinder::calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_
     for(std::size_t i = 0; i < parentcount; ++i)
     {
         int count = 0;
-        unsigned long long *leaf = (unsigned long long*) &parent[i*snpDataSize];
-        for (std::size_t j = 0; j < snpDataSizeULL; ++j)
+        //unsigned long long *leaf = (unsigned long long*) &parent[i*snpDataSize];
+        //for (std::size_t j = 0; j < snpDataSizeULL; ++j)
+        //{
+        //    count += popcount1(leaf[j]);
+        //}
+        HapMap::PrimitiveType *leaf = &parent[i*snpDataSize];
+        for (std::size_t j = 0; j < snpDataSize; ++j)
         {
-            count += popcount1(leaf[j]);
+            count += POPCOUNT(leaf[j]);
         }
         //count -= m_branchCutoff;
         //if (count < 0) count = 0;
@@ -83,15 +88,25 @@ inline void EHHFinder::calcBranchXPEHH(std::size_t currLine, std::size_t& single
     for(std::size_t i = 0; i < m_parent0count; ++i)
     {
         int countA = 0, countB = 0;
-        unsigned long long *leaf = (unsigned long long*) &m_parent0[i*snpDataSize];
-        for (std::size_t j = 0; j < m_snpDataSizeULL_A; ++j)
+        //unsigned long long *leaf = (unsigned long long*) &m_parent0[i*snpDataSize];
+        //for (std::size_t j = 0; j < m_snpDataSizeULL_A; ++j)
+        //{
+        //    countA += popcount1(leaf[j]);
+        //}
+        //leaf = (unsigned long long*) &m_parent0[i*snpDataSize+ m_snpDataSizeA];
+        //for (std::size_t j = 0; j < m_snpDataSizeULL_B; ++j)
+        //{
+        //    countB += popcount1(leaf[j]);
+        //}
+        HapMap::PrimitiveType *leaf = &m_parent0[i*snpDataSize];
+        for (std::size_t j = 0; j < m_snpDataSizeA; ++j)
         {
-            countA += popcount1(leaf[j]);
+            countA += POPCOUNT(leaf[j]);
         }
-        leaf = (unsigned long long*) &m_parent0[i*snpDataSize+ m_snpDataSizeA];
-        for (std::size_t j = 0; j < m_snpDataSizeULL_B; ++j)
+        leaf = &m_parent0[i*snpDataSize+m_snpDataSizeA];
+        for (std::size_t j = 0; j < m_snpDataSizeB; ++j)
         {
-            countB += popcount1(leaf[j]);
+            countB += POPCOUNT(leaf[j]);
         }
         int count = countA+countB;
 
