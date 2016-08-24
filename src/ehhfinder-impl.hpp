@@ -216,7 +216,10 @@ XPEHH EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t focus, std::ato
     m_hdB = hmB->rawData();
     m_snpDataSizeB = hmB->snpDataSize();
     m_snpDataSizeULL_B = hmB->snpDataSizeULL();
-#if VEC==4
+#if VEC==8
+    m_maskA = ::bitsetMask8(hmA->snpLength());
+    m_maskB = ::bitsetMask8(hmA->snpLength());
+#elif VEC==4
     m_maskA = ::bitsetMask4(hmA->snpLength());
     m_maskB = ::bitsetMask4(hmB->snpLength());
 #elif VEC==2
@@ -468,7 +471,9 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long
     m_hdA = hapmap->rawData();
     m_snpDataSizeA = m_snpDataSizeB = hapmap->snpDataSize();
 
-#if VEC==4
+#if VEC==8
+    m_maskA = ::bitsetMask8(hapmap->snpLength());
+#elif VEC==4
     m_maskA = ::bitsetMask4(hapmap->snpLength());
 #elif VEC==2
     m_maskA = ::bitsetMask2(hapmap->snpLength());

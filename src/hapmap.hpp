@@ -35,7 +35,9 @@
 class HapMap
 {
 public:
-#if VEC==4
+#if VEC==8
+    using PrimitiveType = v8ul;
+#elif VEC==4
     using PrimitiveType = v4ul;
 #elif VEC==2
     using PrimitiveType = v2ul;

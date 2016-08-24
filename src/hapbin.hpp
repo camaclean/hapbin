@@ -30,7 +30,8 @@
 #include <stdexcept>
 #include "config.h"
 
-#if defined(__GNUG__) && !defined(__ICC)
+#if defined(__GNUG__)
+typedef unsigned long long v8ul __attribute__((vector_size(64)));
 typedef unsigned long long v4ul __attribute__((vector_size(32)));
 typedef unsigned long long v2ul __attribute__((vector_size(16)));
 #endif
@@ -38,7 +39,9 @@ typedef unsigned long long v2ul __attribute__((vector_size(16)));
 #ifdef VECLEN
 #define VEC VECLEN
 #else
-#ifdef __AVX__
+#ifdef __AVX512F__
+#define VEC 8
+#elif defined(__AVX__)
 #define VEC 4
 #elif defined(__SSE2__)
 #define VEC 2
@@ -47,7 +50,12 @@ typedef unsigned long long v2ul __attribute__((vector_size(16)));
 #endif
 #endif
 
-#if VEC==4
+#if VEC==8
+#define EQUAL(v1, v2) (v1[0] == v2[0] && v1[1] == v2[1] && v1[2] == v2[2] && v1[3] == v2[3] && v1[4] == v2[4] && v1[5] == v2[5] && v1[6] == v2[6] && v1[7] == v2[7])
+#define ZERO ((v8ul){0ULL, 0ULL, 0ULL, 0ULL,0ULL, 0ULL, 0ULL, 0ULL})
+#define BITSET_T_MAX ((v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__})
+#define POPCOUNT popcount8
+#elif VEC==4
 #define EQUAL(v1, v2) (v1[0] == v2[0] && v1[1] == v2[1] && v1[2] == v2[2] && v1[3] == v2[3])
 #define ZERO ((v4ul){0ULL, 0ULL, 0ULL, 0ULL}) 
 #define BITSET_T_MAX ((v4ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__})
@@ -107,6 +115,30 @@ inline T bitsetMask(int length)
     return (std::numeric_limits<T>::max() >> (sizeof(T)*8-(length % (sizeof(T)*8))));
 }
 
+#if VEC==8
+inline v8ul bitsetMask8(int length)
+{
+    int len = length % 512;
+    v8ul ret;
+    if (len < 64)
+        ret = (v8ul){bitsetMask<unsigned long long>(len),0ULL,0ULL,0ULL,0ULL,0ULL,0ULL,0ULL};
+    else if (len < 128)
+        ret = (v8ul){__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL,0ULL,0ULL,0ULL,0ULL,0ULL};
+    else if (len < 192)
+        ret = (v8ul){__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL,0ULL,0ULL,0ULL,0ULL};
+    else if (len < 256)
+        ret = (v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL,0ULL,0ULL,0ULL};
+    else if (len < 320)
+        ret = (v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL,0ULL,0ULL};
+    else if (len < 384)
+        ret = (v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL,0ULL};
+    else if (len < 448)
+        ret = (v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL};
+    else
+        ret = (v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len)};
+    return ret;
+}
+#elif VEC == 4
 inline v4ul bitsetMask4(int length)
 {
     int len = length % 256;
@@ -133,7 +165,7 @@ inline v4ul bitsetMask4(int length)
     }
     return ret;
 }
-
+#elif VEC == 2
 inline v2ul bitsetMask2(int length)
 {
     int len = length % 128;
@@ -149,6 +181,7 @@ inline v2ul bitsetMask2(int length)
     }
     return ret;
 }
+#endif
 
 template<typename T, typename std::enable_if<std::is_integral<T>::value && !std::is_signed<T>::value>::type* = nullptr>
 void convert(const char* line, T* buffer, std::size_t maxLength = 0)
@@ -195,6 +228,19 @@ std::vector<std::string> splitString(const std::string input, char delim);
 inline int popcount1(unsigned long long val)
 {
     return __builtin_popcountll(val);
+}
+
+inline int popcount8(v8ul val)
+{
+    int ret = __builtin_popcountll(val[0]);
+    ret += __builtin_popcountll(val[1]);
+    ret += __builtin_popcountll(val[2]);
+    ret += __builtin_popcountll(val[3]);
+    ret += __builtin_popcountll(val[4]);
+    ret += __builtin_popcountll(val[5]);
+    ret += __builtin_popcountll(val[6]);
+    ret += __builtin_popcountll(val[7]);
+    return ret;
 }
 
 inline int popcount4(v4ul val)
