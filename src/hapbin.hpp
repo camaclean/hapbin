@@ -140,7 +140,6 @@ inline v8ul bitsetMask8(int length)
         return (v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL};
     else
         return (v8ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len)};
-    return ret;
 }
 #elif VEC == 4
 inline v4ul bitsetMask4(int length)
