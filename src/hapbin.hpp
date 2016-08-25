@@ -233,9 +233,10 @@ inline int popcount8(v8ul val)
     ret += __builtin_popcountll(val[7]);
     return ret;
 #else
-    //v8ul  m3    = (v8ul){0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333};
-    //v8ul  m5    = (v8ul){0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555};
-    //v8ul  mF    = (v8ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v8ul  m3    = (v8ul){0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333};
+    v8ul  m5    = (v8ul){0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555};
+    v8ul  m0F   = (v8ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v8ul  m01   = (v8ul){0x0101010101010101,0x0101010101010101,0x0101010101010101,0x0101010101010101,0x0101010101010101,0x0101010101010101,0x0101010101010101,0x0101010101010101};
     //v8ul  mF2   = (v8ul){0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF};
     //v8ul  mF4   = (v8ul){0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF};
     //v8ul  mF8   = (v8ul){0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF};
@@ -248,10 +249,10 @@ inline int popcount8(v8ul val)
     //return _mm512_reduce_add_epi32((_m512i) val);
     //v16ui tmp = (v16ui) val;
     //return tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7] + tmp[8] + tmp[9] + tmp[10] + tmp[11] + tmp[12] + tmp[13] + tmp[14] + tmp[15];
-    val =  val - ((val >> 1) & 0x5555555555555555ULL);
-    val = (val & 0x3333333333333333ULL) + ((val >> 2) & 0x3333333333333333ULL);
-    val = (val + (val >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-    val = (val * 0x0101010101010101ULL) >> 56;
+    val =  val - ((val >> 1) & m5);
+    val = (val & m3) + ((val >> 2) & m3);
+    val = (val + (val >> 4)) & m0F;
+    val = (val * m01) >> 56;
     return val[0] + val[1] + val[2] + val[3] + val[4] + val[5] + val[6] + val[7];
 #endif
 }
@@ -265,9 +266,10 @@ inline int popcount4(v4ul val)
     ret += __builtin_popcountll(val[3]);
     return ret;
 #else
-    //v4ul  m3    = (v4ul){0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333};
-    //v4ul  m5    = (v4ul){0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555};
-    //v4ul  mF    = (v4ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v4ul  m3    = (v4ul){0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333};
+    v4ul  m5    = (v4ul){0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555};
+    v4ul  m0F   = (v4ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v4ul  m01   = (v4ul){0x0101010101010101,0x0101010101010101,0x0101010101010101,0x0101010101010101};
     //v4ul  mF2   = (v4ul){0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF};
     //v4ul  mF4   = (v4ul){0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF};
     //v4ul  mF8   = (v4ul){0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF};
@@ -279,10 +281,10 @@ inline int popcount4(v4ul val)
     //  //val = (mF8 & val) + (mF8 & (val >> 32));
     //v8ui tmp = (v8ui) val;
     //return tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
-    val =  val - ((val >> 1) & 0x5555555555555555ULL);
-    val = (val & 0x3333333333333333ULL) + ((val >> 2) & 0x3333333333333333ULL);
-    val = (val + (val >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-    val = (val * 0x0101010101010101ULL) >> 56;
+    val =  val - ((val >> 1) & m5);
+    val = (val & m3) + ((val >> 2) & m3);
+    val = (val + (val >> 4)) & m0F;
+    val = (val * m01) >> 56;
     return val[0] + val[1] + val[2] + val[3];
 #endif
 }
@@ -294,9 +296,10 @@ inline int popcount2(v2ul val)
     ret += __builtin_popcountll(val[1]);
     return ret;
 #else
-    //v2ul  m3    = (v2ul){0x3333333333333333,0x3333333333333333};
-    //v2ul  m5    = (v2ul){0x5555555555555555,0x5555555555555555};
-    //v2ul  mF    = (v2ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v2ul  m3    = (v2ul){0x3333333333333333,0x3333333333333333};
+    v2ul  m5    = (v2ul){0x5555555555555555,0x5555555555555555};
+    v2ul  m0F   = (v2ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v2ul  m01   = (v2ul){0x0101010101010101,0x0101010101010101};
     //v2ul  mF2   = (v2ul){0x00FF00FF00FF00FF,0x00FF00FF00FF00FF};
     //v2ul  mF4   = (v2ul){0x0000FFFF0000FFFF,0x0000FFFF0000FFFF};
     //v2ul  mF8   = (v2ul){0x00000000FFFFFFFF,0x00000000FFFFFFFF};
@@ -305,10 +308,10 @@ inline int popcount2(v2ul val)
     //val = (mF  & val) + (mF  & (val >> 4 ));
     //val = (mF2 & val) + (mF2 & (val >> 8 ));
     //  //val = (mF4 & val) + (mF4 & (val >> 16));
-    val =  val - ((val >> 1) & 0x5555555555555555ULL);
-    val = (val & 0x3333333333333333ULL) + ((val >> 2) & 0x3333333333333333ULL);
-    val = (val + (val >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-    val = (val * 0x0101010101010101ULL) >> 56;
+    val =  val - ((val >> 1) & m5);
+    val = (val & m3) + ((val >> 2) & m3);
+    val = (val + (val >> 4)) & m0F;
+    val = (val * m01) >> 56;
     return val[0] + val[1];
     //val = (mF8 & val) + (mF8 & (val >> 32));
     //v4ui tmp = (v4ui) val;
