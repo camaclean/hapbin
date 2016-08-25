@@ -31,9 +31,11 @@
 #include "config.h"
 
 #if defined(__GNUG__)
-typedef unsigned long long v8ul __attribute__((vector_size(64)));
-typedef unsigned long long v4ul __attribute__((vector_size(32)));
-typedef unsigned long long v2ul __attribute__((vector_size(16)));
+typedef unsigned long long v8ul  __attribute__((vector_size(64)));
+typedef unsigned int       v16ui __attribute__((vector_size(64)));
+typedef unsigned long long v4ul  __attribute__((vector_size(32)));
+typedef unsigned int       v8ui  __attribute__((vector_size(32)));
+typedef unsigned long long v2ul  __attribute__((vector_size(16)));
 #endif
 
 #ifdef VECLEN
@@ -41,6 +43,8 @@ typedef unsigned long long v2ul __attribute__((vector_size(16)));
 #else
 #ifdef __AVX512F__
 #define VEC 8
+#include <zmmintrin.h>
+#include <immintrin.h>
 #elif defined(__AVX__)
 #define VEC 4
 #elif defined(__SSE2__)
@@ -142,43 +146,26 @@ inline v8ul bitsetMask8(int length)
 inline v4ul bitsetMask4(int length)
 {
     int len = length % 256;
-    v4ul ret = (v4ul){0ULL,0ULL,0ULL,0ULL};
+    v4ul ret;
     if (len < 64)
-    {
-        ret[0] = bitsetMask<unsigned long long>(len);
-    } 
+        ret = (v4ul){bitsetMask<unsigned long long>(len),0ULL,0ULL,0ULL};
     else if (len < 128)
-    {
-        ret[0] = __UINT64_MAX__;
-        ret[1] = bitsetMask<unsigned long long>(len);
-    }
+        ret = (v4ul){__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL,0ULL};
     else if (len < 192)
-    {
-        ret[0] = __UINT64_MAX__;
-        ret[1] = __UINT64_MAX__;
-        ret[2] = bitsetMask<unsigned long long>(len);
-    } 
+        ret = (v4ul){__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len),0ULL};
     else
-    {
-        ret = (v4ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__};
-        ret[3] = bitsetMask<unsigned long long>(len);
-    }
+        ret = (v4ul){__UINT64_MAX__,__UINT64_MAX__,__UINT64_MAX__,bitsetMask<unsigned long long>(len)};
     return ret;
 }
 #elif VEC == 2
 inline v2ul bitsetMask2(int length)
 {
     int len = length % 128;
-    v2ul ret = (v2ul){0ULL,0ULL};
+    v2ul ret;
     if (len < 64)
-    {
-        ret[0] = bitsetMask<unsigned long long>(len);
-    } 
+        ret = (v2ul){bitsetMask<unsigned long long>(len),0ULL};
     else
-    {
-        ret[0] = __UINT64_MAX__;
-        ret[1] = bitsetMask<unsigned long long>(len);
-    }
+        ret = (v2ul){__UINT64_MAX__,bitsetMask<unsigned long long>(len)};
     return ret;
 }
 #endif
@@ -230,26 +217,55 @@ inline int popcount1(unsigned long long val)
     return __builtin_popcountll(val);
 }
 
+#if VEC == 8
 inline int popcount8(v8ul val)
 {
-    int ret = __builtin_popcountll(val[0]);
-    ret += __builtin_popcountll(val[1]);
-    ret += __builtin_popcountll(val[2]);
-    ret += __builtin_popcountll(val[3]);
-    ret += __builtin_popcountll(val[4]);
-    ret += __builtin_popcountll(val[5]);
-    ret += __builtin_popcountll(val[6]);
-    ret += __builtin_popcountll(val[7]);
-    return ret;
+    v8ul  m3    = (v8ul){0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333};
+    v8ul  m5    = (v8ul){0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555};
+    v8ul  mF    = (v8ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v8ul  mF2   = (v8ul){0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF};
+    v8ul  mF4   = (v8ul){0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF};
+    v8ul  mF8   = (v8ul){0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF};
+    val = (m5  & val) + (m5  & (val >> 1 ));
+    val = (m3  & val) + (m3  & (val >> 2 ));
+    val = (mF  & val) + (mF  & (val >> 4 ));
+    val = (mF2 & val) + (mF2 & (val >> 8 ));
+    val = (mF4 & val) + (mF4 & (val >> 16));
+    val = (mF8 & val) + (mF8 & (val >> 32));
+    return _mm512_reduce_add_epi32((_m512i) val);
+    //int ret = __builtin_popcountll(val[0]);
+    //ret += __builtin_popcountll(val[1]);
+    //ret += __builtin_popcountll(val[2]);
+    //ret += __builtin_popcountll(val[3]);
+    //ret += __builtin_popcountll(val[4]);
+    //ret += __builtin_popcountll(val[5]);
+    //ret += __builtin_popcountll(val[6]);
+    //ret += __builtin_popcountll(val[7]);
+    //return ret;
 }
+#endif
 
 inline int popcount4(v4ul val)
 {
-    int ret = __builtin_popcountll(val[0]);
-    ret += __builtin_popcountll(val[1]);
-    ret += __builtin_popcountll(val[2]);
-    ret += __builtin_popcountll(val[3]);
-    return ret;
+    v4ul  m3    = (v4ul){0x3333333333333333,0x3333333333333333,0x3333333333333333,0x3333333333333333};
+    v4ul  m5    = (v4ul){0x5555555555555555,0x5555555555555555,0x5555555555555555,0x5555555555555555};
+    v4ul  mF    = (v4ul){0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F,0x0F0F0F0F0F0F0F0F};
+    v4ul  mF2   = (v4ul){0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF,0x00FF00FF00FF00FF};
+    v4ul  mF4   = (v4ul){0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF,0x0000FFFF0000FFFF};
+    v4ul  mF8   = (v4ul){0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF,0x00000000FFFFFFFF};
+    val = (m5  & val) + (m5  & (val >> 1 ));
+    val = (m3  & val) + (m3  & (val >> 2 ));
+    val = (mF  & val) + (mF  & (val >> 4 ));
+    val = (mF2 & val) + (mF2 & (val >> 8 ));
+    val = (mF4 & val) + (mF4 & (val >> 16));
+    val = (mF8 & val) + (mF8 & (val >> 32));
+    v8ui tmp = (v8ui) val;
+    return tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
+    //int ret = __builtin_popcountll(val[0]);
+    //ret += __builtin_popcountll(val[1]);
+    //ret += __builtin_popcountll(val[2]);
+    //ret += __builtin_popcountll(val[3]);
+    //return ret;
 }
 
 inline int popcount2(v2ul val)
