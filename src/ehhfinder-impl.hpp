@@ -27,16 +27,19 @@ void EHHFinder::calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_
     for(std::size_t i = 0; i < parentcount; ++i)
     {
         int count = 0;
-        //unsigned long long *leaf = (unsigned long long*) &parent[i*snpDataSize];
-        //for (std::size_t j = 0; j < snpDataSizeULL; ++j)
-        //{
-        //    count += popcount1(leaf[j]);
-        //}
+#ifdef USE_POPCNT
+        unsigned long long *leaf = (unsigned long long*) &parent[i*snpDataSize];
+        for (std::size_t j = 0; j < snpDataSizeULL; ++j)
+        {
+            count += popcount1(leaf[j]);
+        }
+#else
         HapMap::PrimitiveType *leaf = &parent[i*snpDataSize];
         for (std::size_t j = 0; j < snpDataSize; ++j)
         {
             count += POPCOUNT(leaf[j]);
         }
+#endif
         //count -= m_branchCutoff;
         //if (count < 0) count = 0;
 
@@ -88,16 +91,18 @@ inline void EHHFinder::calcBranchXPEHH(std::size_t currLine, std::size_t& single
     for(std::size_t i = 0; i < m_parent0count; ++i)
     {
         int countA = 0, countB = 0;
-        //unsigned long long *leaf = (unsigned long long*) &m_parent0[i*snpDataSize];
-        //for (std::size_t j = 0; j < m_snpDataSizeULL_A; ++j)
-        //{
-        //    countA += popcount1(leaf[j]);
-        //}
-        //leaf = (unsigned long long*) &m_parent0[i*snpDataSize+ m_snpDataSizeA];
-        //for (std::size_t j = 0; j < m_snpDataSizeULL_B; ++j)
-        //{
-        //    countB += popcount1(leaf[j]);
-        //}
+#ifdef USE_POPCNT
+        unsigned long long *leaf = (unsigned long long*) &m_parent0[i*snpDataSize];
+        for (std::size_t j = 0; j < m_snpDataSizeULL_A; ++j)
+        {
+            countA += popcount1(leaf[j]);
+        }
+        leaf = (unsigned long long*) &m_parent0[i*snpDataSize+ m_snpDataSizeA];
+        for (std::size_t j = 0; j < m_snpDataSizeULL_B; ++j)
+        {
+            countB += popcount1(leaf[j]);
+        }
+#else
         HapMap::PrimitiveType *leaf = &m_parent0[i*snpDataSize];
         for (std::size_t j = 0; j < m_snpDataSizeA; ++j)
         {
@@ -108,6 +113,7 @@ inline void EHHFinder::calcBranchXPEHH(std::size_t currLine, std::size_t& single
         {
             countB += POPCOUNT(leaf[j]);
         }
+#endif
         int count = countA+countB;
 
         if (Binom && count <= 1)
@@ -257,15 +263,20 @@ XPEHH EHHFinder::findXPEHH(HapMap* hmA, HapMap* hmB, std::size_t focus, std::ato
     unsigned long long locusPysPos = hmA->physicalPosition(focus);
     XPEHH ret;
     ret.index = focus;
+#ifdef USE_POPCNT
+    unsigned long long *snp = (unsigned long long*) &m_hdA[focus*m_snpDataSizeA];
+    for(std::size_t i = 0; i < m_snpDataSizeULL_A; ++i)
+        ret.numA += popcount1(snp[i]);
+    snp = (unsigned long long*) &m_hdB[focus*m_snpDataSizeB];
+    for(std::size_t i = 0; i < m_snpDataSizeULL_B; ++i)
+        ret.numB += popcount1(snp[i]);
+#else
     for(std::size_t i = 0; i < m_snpDataSizeA; ++i)
-    {
         ret.numA += POPCOUNT(m_hdA[focus*m_snpDataSizeA+i]);
-    }
-    ret.numNotA = hmA->snpLength() - ret.numA;
     for(std::size_t i = 0; i < m_snpDataSizeB; ++i)
-    {
         ret.numB += POPCOUNT(m_hdB[focus*m_snpDataSizeB+i]);
-    }
+#endif
+    ret.numNotA = hmA->snpLength() - ret.numA;
     ret.numNotB = hmA->snpLength() - ret.numB;
     double probASingle, probBSingle, probPSingle;
     double lastEhhA, lastEhhB, lastEhhP;
@@ -485,6 +496,7 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long
     }
     m_hdA = hapmap->rawData();
     m_snpDataSizeA = m_snpDataSizeB = hapmap->snpDataSize();
+    m_snpDataSizeULL_A = m_snpDataSizeULL_B = hapmap->snpDataSizeULL();
 
 #if VEC==8
     m_maskA = ::bitsetMask8(hapmap->snpLength());
@@ -498,10 +510,14 @@ EHH EHHFinder::find(HapMap* hapmap, std::size_t focus, std::atomic<unsigned long
     EHH ret;
     ret.index = focus;
     
+#ifdef USE_POPCNT
+    unsigned long long *snp = (unsigned long long*) &m_hdA[focus*m_snpDataSizeA];
+    for(std::size_t i = 0; i < m_snpDataSizeULL_A; ++i)
+        ret.num += popcount1(snp[i]);
+#else
     for(std::size_t i = 0; i < m_snpDataSizeA; ++i)
-    {
         ret.num += POPCOUNT(m_hdA[focus*m_snpDataSizeA+i]);
-    }
+#endif
     ret.numNot = hapmap->snpLength() - ret.num;
     
     double maxEHH = ret.num/(double)hapmap->snpLength();
