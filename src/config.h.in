@@ -18,6 +18,7 @@
  */
 
 #cmakedefine HAVE_MPILIB @HAVE_MPILIB@
+#cmakedefine HAVE_HBWMALLOC_H @HAVE_HBWMALLOC_H@
 #cmakedefine MPIRPC_FOUND @MPIRPC_FOUND@
 #cmakedefine USE_MPI @USE_MPI@
 #cmakedefine USE_POPCNT @USE_POPCNT@

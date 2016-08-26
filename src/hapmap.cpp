@@ -32,7 +32,10 @@ HapMap::HapMap()
     , m_snpDataSize64{}
     , m_snpDataSizeULL{}
 {
-
+#ifdef HAVE_HBWMALLOC_H
+    if (hbw_check_available() == ENODEV)
+        std::cout << "WARNING: No high memory device available! Did you forget to set MEMKIND_HBW_NODES in your environment?" << std::endl;
+#endif
 }
 
 HapMap::~HapMap()

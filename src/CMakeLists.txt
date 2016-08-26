@@ -20,6 +20,7 @@ option(MARCH_NATIVE "Optimize with -march=native" ON)
 option(USE_MPI "Build with MPI, if available" ON)
 option(USE_POPCNT "Build using the popcnt instruction if available" ON)
 option(USE_LTO "Build with Link Time Optimizations" OFF)
+option(BUILD_KNL "Build targeting KNL" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -35,8 +36,13 @@ string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+(.*)" "\\1" VERSION_SHA1
     "${VERSION}")
 set(VERSION_SHORT "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
-add_definitions(-xMIC-AVX512)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -qopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    if(BUILD_KNL)
+        add_definitions(-xMIC-AVX512)
+    endif(BUILD_KNL)
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 if(CMAKE_COMPILER_IS_GNUCXX)
     if(USE_LTO)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fuse-linker-plugin -fuse-ld=gold")
@@ -49,11 +55,20 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     endif(MARCH_NATIVE)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
+
+
 find_package(OpenMP)
 
 #add_definitions(-std=c++11 -Wall -O3 -march=corei7)
 
 include_directories("${PROJECT_BINARY_DIR}")
+
+INCLUDE (CheckIncludeFiles)
+CHECK_INCLUDE_FILES(hbwmalloc.h HAVE_HBWMALLOC_H)
+if(HAVE_HBWMALLOC_H)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lmemkind")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lmemkind")
+endif(HAVE_HBWMALLOC_H)
 
 include(FindMPI)
 if(MPI_FOUND AND USE_MPI)
@@ -119,8 +134,8 @@ set(CPACK_PACKAGE_VENDOR "Colin MacLean, University of Edinburgh")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "3")
-set(CPACK_PACKAGE_VERSION_PATCH "1")
+set(CPACK_PACKAGE_VERSION_MINOR "4")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "x86_64")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Colin MacLean <cmaclean@illinois.edu>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "mpich (>= 3.0.0), libgcc1 (>= 1:4.7), libstdc++6 (>= 4.7)")

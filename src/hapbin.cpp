@@ -21,7 +21,15 @@
 #include <vector>
 #include <sstream>
 
-#if defined(__MINGW32__) && !defined(_ISOC11_SOURCE)
+#ifdef HAVE_HBWMALLOC_H
+void* aligned_alloc(size_t alignment, size_t size)
+{
+    void* ret;
+    if (hbw_posix_memalign(&ret, alignment, size) != 0)
+        throw std::bad_alloc();
+    return ret;
+}
+#elif defined(__MINGW32__) && !defined(_ISOC11_SOURCE)
 void* aligned_alloc(size_t alignment, size_t size)
 {
     return __mingw_aligned_malloc(size, alignment);

@@ -77,12 +77,13 @@ typedef unsigned int       v4ui  __attribute__((vector_size(16)));
 #define POPCOUNT popcount1
 #endif
 
-#if defined(__MINGW32__) && !defined(_ISOC11_SOURCE)
 void* aligned_alloc(size_t alignment, size_t size);
+
+#ifdef HAVE_HBWMALLOC_H
+#include <hbwmalloc.h>
+#define aligned_free hbw_free
+#elif defined(__MINGW32__) && !defined(_ISOC11_SOURCE)
 void aligned_free(void* ptr);
-#elif (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_ISOC11_SOURCE)
-void* aligned_alloc(size_t alignment, size_t size);
-#define aligned_free free
 #else
 #define aligned_free free
 #endif
