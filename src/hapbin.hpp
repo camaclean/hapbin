@@ -92,25 +92,21 @@ typedef unsigned int       v4ui  __attribute__((vector_size(16)));
 void* aligned_alloc(size_t alignment, size_t size);
 
 #ifdef HAVE_HBWMALLOC_H
-//#include <hbwmalloc.h>
-//#include "hbw_allocator.h"
-//template<typename T>
-//using allocator = hbw::allocator<T>;
-//template<typename T1, typename T2>
-//bool operator==(const hbw::allocator<T1>& lhs, const hbw::allocator<T2>& rhs) { return true; }
-//template<typename T1, typename T2>
-//bool operator!=(const hbw::allocator<T1>& lhs, const hbw::allocator<T2>& rhs) { return false; }
 namespace mystd
 {
 template<typename T>
-using vector = std::vector<T,hbw::allocator<T>>;
+using allocator = hbw::allocator<T>;
+template<typename T>
+using vector = std::vector<T,mystd::allocator<T>>;
 template<typename Key, typename T>
-using map = std::map<Key,T,std::less<Key>,hbw::allocator<std::pair<Key,T>>>;
+using map = std::map<Key,T,std::less<Key>,mystd::allocator<std::pair<Key,T>>>;
 }
 #elif defined(__MINGW32__) && !defined(_ISOC11_SOURCE)
 void aligned_free(void* ptr);
 namespace mystd
 {
+template<typename T>
+using allocator = std::allocator<T>;
 template<typename T>
 using vector = std::vector<T>;
 template<typename Key, typename T>
@@ -118,10 +114,10 @@ using map = std::map<Key,T>;
 }
 #else
 #define aligned_free free
-template<typename T>
-using allocator = std::allocator;
 namespace mystd
 {
+template<typename T>
+using allocator = std::allocator<T>;
 template<typename T>
 using vector = std::vector<T>;
 template<typename Key, typename T>
