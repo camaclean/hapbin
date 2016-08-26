@@ -96,8 +96,8 @@ inline typename std::decay<T>::type unmarshal(ParameterStream& s) {
     return ret;
 }
 
-template<typename T>
-ParameterStream& operator<<(ParameterStream& out, const std::vector<T>& vector)
+template<typename T, class Allocator>
+ParameterStream& operator<<(ParameterStream& out, const std::vector<T,Allocator>& vector)
 {
     out << vector.size();
     for (std::size_t i = 0; i < vector.size(); ++i)
@@ -107,8 +107,8 @@ ParameterStream& operator<<(ParameterStream& out, const std::vector<T>& vector)
     return out;
 }
 
-template <typename T>
-ParameterStream& operator>>(ParameterStream& in, std::vector<T>& vector)
+template <typename T, class Allocator>
+ParameterStream& operator>>(ParameterStream& in, std::vector<T,Allocator>& vector)
 {
     std::size_t size;
     in >> size;
@@ -122,8 +122,8 @@ ParameterStream& operator>>(ParameterStream& in, std::vector<T>& vector)
     return in;
 }
 
-template<typename T, typename U>
-ParameterStream& operator<<(ParameterStream& out, const std::map<T, U>& map)
+template<typename T, typename U, class Compare, class Allocator>
+ParameterStream& operator<<(ParameterStream& out, const std::map<T, U, Compare, Allocator>& map)
 {
     out <<  map.size();
     for (auto pair : map)
@@ -133,8 +133,8 @@ ParameterStream& operator<<(ParameterStream& out, const std::map<T, U>& map)
     return out;
 }
 
-template<typename T, typename U>
-ParameterStream& operator>>(ParameterStream& in, std::map<T, U>& map)
+template<typename T, typename U, class Compare, class Allocator>
+ParameterStream& operator>>(ParameterStream& in, std::map<T, U, Compare, Allocator>& map)
 {
     std::size_t size;
     in >> size;
