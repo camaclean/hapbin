@@ -104,7 +104,7 @@ void IHSFinder::addData(const IHSFinder::LineMap& freqsBySite,
     m_freqmutex.lock();
     for (auto pair : unStandIHSByFreq)
     {
-        std::vector<double>& v = m_unStandIHSByFreq[pair.first];
+        auto& v = m_unStandIHSByFreq[pair.first];
         v.insert(v.end(), pair.second.begin(), pair.second.end());
     }
     m_freqmutex.unlock();
@@ -127,7 +127,7 @@ void IHSFinder::addXData(const IHSFinder::LineMap& freqsBySite,
     m_freqmutex.lock();
     for (auto pair : unStandIHSByFreq)
     {
-        std::vector<double>& v = m_unStandIHSByFreq[pair.first];
+        auto& v = m_unStandIHSByFreq[pair.first];
         v.insert(v.end(), pair.second.begin(), pair.second.end());
     }
     m_freqmutex.unlock();

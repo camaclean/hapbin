@@ -60,7 +60,7 @@ double nearest(double target, double number)
     return std::round(number/target)*target;
 }
 
-Stats stats(const std::vector<double>& list)
+Stats stats(const mystd::vector<double>& list)
 {
     Stats s;
     if (list.size() == 0)
@@ -85,10 +85,10 @@ Stats stats(const std::vector<double>& list)
     return s;
 }
 
-std::vector<std::string> splitString(const std::string input, char delim)
+mystd::vector<std::string> splitString(const std::string input, char delim)
 {
     std::stringstream ss(input);
-    std::vector<std::string> split;
+    mystd::vector<std::string> split;
     std::string part;
     while (std::getline(ss,part,delim))
         split.push_back(part);

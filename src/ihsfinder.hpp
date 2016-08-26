@@ -34,11 +34,11 @@
 class IHSFinder
 {
 public:
-    using LineMap = std::map<std::size_t, double>;
-    using IhsInfoMap = std::map<std::size_t, IhsScore>;
-    using XIhsInfoMap = std::map<std::size_t, XPEHH>;
-    using FreqVecMap = std::map<double, std::vector<double>>;
-    using StatsMap = std::map<double, Stats>;
+    using LineMap = mystd::map<std::size_t, double>;
+    using IhsInfoMap = mystd::map<std::size_t, IhsScore>;
+    using XIhsInfoMap = mystd::map<std::size_t, XPEHH>;
+    using FreqVecMap = mystd::map<double, mystd::vector<double>>;
+    using StatsMap = mystd::map<double, Stats>;
     
     IHSFinder(std::size_t snpLength, double cutoff, double minMAF, double scale, unsigned long long maxExtend, int bins);
     FreqVecMap unStdIHSByFreq() const { return m_unStandIHSByFreq; }

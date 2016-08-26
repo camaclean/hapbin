@@ -41,8 +41,8 @@ HapMap::HapMap()
 HapMap::~HapMap()
 {
     aligned_free(m_data);
-    delete m_physPos;
-    delete m_genPos;
+    aligned_free(m_physPos);
+    aligned_free(m_genPos);
 }
 
 void HapMap::loadMap(const char* mapFilename)
@@ -52,8 +52,10 @@ void HapMap::loadMap(const char* mapFilename)
         delete m_physPos;
     if (m_genPos)
         delete m_genPos;
-    m_physPos = new unsigned long long[m_numSnps];
-    m_genPos = new double[m_numSnps];
+    aligned_free(m_physPos);
+    aligned_free(m_genPos);
+    m_physPos = (unsigned long long*) aligned_alloc(128, m_numSnps*sizeof(unsigned long long));
+    m_genPos  = (double*            ) aligned_alloc(128, m_numSnps*sizeof(double            ));
         
     std::ifstream file(mapFilename);
 
@@ -67,7 +69,7 @@ void HapMap::loadMap(const char* mapFilename)
             std::cerr << "WARNING: Map file has more loci than hap file!" << std::endl;
             return;
         }
-        std::vector<std::string> split = splitString(line, ' ');
+        mystd::vector<std::string> split = splitString(line, ' ');
 	if (split.size() == 1)
             split = splitString(line, '\t');
         if (split.size() == 4) {
