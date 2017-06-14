@@ -129,13 +129,13 @@ class Manager
      * Static functions in a class behave as normal function pointers, not member
      * function pointers.
      */
-    class FunctionBase
+    class function_base
     {
     public:
         /*using GenericFunctionPointer = void(*)();*/
         typedef void(*GenericFunctionPointer)();
 
-        FunctionBase() : m_id(makeId()), m_pointer(0) {}
+        function_base() : m_id(makeId()), m_pointer(0) {}
 
         /**
          * @brief execute Execute the function
@@ -150,7 +150,7 @@ class Manager
         FunctionHandle id() const { return m_id; }
         GenericFunctionPointer pointer() const { return m_pointer; }
         
-        virtual ~FunctionBase() {};
+        virtual ~function_base() {};
 
     private:
         static FunctionHandle makeId() {
@@ -175,13 +175,13 @@ class Manager
      * Specialization of Function<F> for functions with non-void return types.
      */
     template<typename R, typename... Args>
-    class Function<R(*)(Args...)> : public FunctionBase
+    class Function<R(*)(Args...)> : public function_base
     {
     public:
         /*using FunctionType = R(*)(Args...);*/
         typedef R(*FunctionType)(Args...);
 
-        Function(FunctionType f) : FunctionBase(), func(f) { m_pointer = reinterpret_cast<void(*)()>(f); }
+        Function(FunctionType f) : function_base(), func(f) { m_pointer = reinterpret_cast<void(*)()>(f); }
 
         virtual void execute(ParameterStream& params, int senderRank, Manager *manager, bool getReturn = false, void* object = 0) //override
         {
@@ -209,13 +209,13 @@ class Manager
      * Specialization of Function<F> for functions with void return types.
      */
     template<typename... Args>
-    class Function<void(*)(Args...)> : public FunctionBase
+    class Function<void(*)(Args...)> : public function_base
     {
     public:
         //using FunctionType = void(*)(Args...);
         typedef void(*FunctionType)(Args...);
 
-        Function(FunctionType f) : FunctionBase(), func(f) { m_pointer = reinterpret_cast<void(*)()>(f); }
+        Function(FunctionType f) : function_base(), func(f) { m_pointer = reinterpret_cast<void(*)()>(f); }
 
         virtual void execute(ParameterStream& params, int senderRank, Manager *manager, bool getReturn = false, void* object = 0) //override
         {
@@ -231,13 +231,13 @@ class Manager
      * Specialization of Function<F> for member functions witn non-void return types.
      */
     template<typename Class, typename R, typename... Args>
-    class Function<R(Class::*)(Args...)> : public FunctionBase
+    class Function<R(Class::*)(Args...)> : public function_base
     {
     public:
         //using FunctionType = R(Class::*)(Args...);
         typedef R(Class::*FunctionType)(Args...);
 
-        Function(FunctionType f) : FunctionBase(), func(f){}
+        Function(FunctionType f) : function_base(), func(f){}
 
         virtual void execute(ParameterStream& params, int senderRank, Manager *manager, bool getReturn = false, void* object = 0) //override
         {
@@ -257,13 +257,13 @@ class Manager
      * Specialization of Function<F> for member functions with void return types.
      */
     template<typename Class, typename... Args>
-    class Function<void(Class::*)(Args...)> : public FunctionBase
+    class Function<void(Class::*)(Args...)> : public function_base
     {
     public:
         //using FunctionType = void(Class::*)(Args...);
         typedef void(Class::*FunctionType)(Args...);
 
-        Function(FunctionType f) : FunctionBase(), func(f) {}
+        Function(FunctionType f) : function_base(), func(f) {}
 
         virtual void execute(ParameterStream& params, int senderRank, Manager *manager, bool getReturn = false, void* object = 0) //override
         {
@@ -280,13 +280,13 @@ class Manager
      */
     template<typename R, typename... Args>
     class Function<std::function<R(Args...)>>
-        : public FunctionBase
+        : public function_base
     {
     public:
         //using FunctionType = std::function<R(Args...)>;
         typedef std::function<R(Args...)> FunctionType;
 
-        Function(FunctionType& f) : FunctionBase(), func(f) {}
+        Function(FunctionType& f) : function_base(), func(f) {}
 
         virtual void execute(ParameterStream &params, int senderRank, Manager *manager, bool getReturn, void *object = 0) //override
         {
@@ -306,13 +306,13 @@ class Manager
      */
     template<typename... Args>
     class Function<std::function<void(Args...)>>
-        : public FunctionBase
+        : public function_base
     {
     public:
         //using FunctionType = std::function<void(Args...)>;
         typedef std::function<void(Args...)> FunctionType;
 
-        Function(FunctionType& f) : FunctionBase(), func(f) {}
+        Function(FunctionType& f) : function_base(), func(f) {}
 
         virtual void execute(ParameterStream &params, int senderRank, Manager *manager, bool getReturn, void *object = 0) //override
         {
@@ -374,7 +374,7 @@ public:
     template<typename F>
     FunctionHandle registerFunction(F f)
     {
-        FunctionBase *b = new Function<F>(f);
+        function_base *b = new Function<F>(f);
         m_registeredFunctions[b->id()] = b;
         return b->id();
     }
@@ -424,8 +424,8 @@ public:
      * @return A wrapper for the object, containing a pointer to the object and the ids used to call its member functions
      */
     template<class Class>
-    ObjectWrapper<Class>* registerObject(Class *object) {
-        ObjectWrapper<Class> *wrapper = new ObjectWrapper<Class>(object);
+    object_wrapper<Class>* registerObject(Class *object) {
+        object_wrapper<Class> *wrapper = new object_wrapper<Class>(object);
         wrapper->m_rank = m_rank;
         wrapper->m_type = getTypeId<Class>();
         m_registeredObjects.push_back(wrapper);
@@ -547,7 +547,7 @@ public:
     {
         if (a->rank() == m_rank)
         {
-            ObjectWrapper<Class> *o = static_cast<ObjectWrapper<Class>*>(a);
+            object_wrapper<Class> *o = static_cast<object_wrapper<Class>*>(a);
             return CALL_MEMBER_FN(*o->object(),f)(args...);
         } else {
             for (const auto &i : m_registeredFunctions)
@@ -582,7 +582,7 @@ public:
     {
         if (a->rank() == m_rank)
         {
-            ObjectWrapper<Class> *o = static_cast<ObjectWrapper<Class>*>(a);
+            object_wrapper<Class> *o = static_cast<object_wrapper<Class>*>(a);
             CALL_MEMBER_FN(*o->object(),f)(args...);
         } else {
             for (const auto &i : m_registeredFunctions)
@@ -919,7 +919,7 @@ protected:
 
     std::unordered_map<std::type_index, TypeId> m_registeredTypeIds;
 
-    std::map<FunctionHandle, FunctionBase*> m_registeredFunctions;
+    std::map<FunctionHandle, function_base*> m_registeredFunctions;
     std::vector<ObjectWrapperBase*> m_registeredObjects;
 
     std::unordered_map<MPI_Request, const std::vector<char>*> m_mpiMessages;

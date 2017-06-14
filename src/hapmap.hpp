@@ -58,6 +58,9 @@ public:
     bool loadHapAscii(const char* filename, std::size_t maxLength = 0);
     bool loadHap(const char* filename);
     void save(const char* filename);
+
+    const double* geneticPositionData() const { return m_genPos; }
+    const unsigned long long* physicalPositionData() const { return m_physPos; }
     
     std::size_t numSnps() const { return m_numSnps; }
     std::size_t snpLength() const { return m_snpLength; }

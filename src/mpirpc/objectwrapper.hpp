@@ -30,14 +30,14 @@ namespace mpirpc {
  *
  * Used to reference objects on remote ranks
  */
-class ObjectWrapperBase {
+class object_wrapper_base {
     friend class Manager;
 public:
-    ObjectWrapperBase(void* object) : m_object(object), m_type(0) {
+    object_wrapper_base(void* object) : m_object(object), m_type(0) {
         m_id = ++objectIdCounter;
     }
 
-    virtual ~ObjectWrapperBase() {}
+    virtual ~object_wrapper_base() {}
 
     void* object() const { return m_object; }
 
@@ -58,11 +58,11 @@ protected:
  * Used to reference objects on the local rank.
  */
 template<typename T>
-class ObjectWrapper : public ObjectWrapperBase
+class ObjectWrapper : public object_wrapper_base
 {
     friend class Manager;
 public:
-    ObjectWrapper(T* object = 0) :  ObjectWrapperBase(object) {}
+    ObjectWrapper(T* object = 0) :  object_wrapper_base(object) {}
 
     T* object() const { return m_object; }
 

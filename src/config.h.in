@@ -22,6 +22,7 @@
 #cmakedefine MPIRPC_FOUND @MPIRPC_FOUND@
 #cmakedefine USE_MPI @USE_MPI@
 #cmakedefine USE_POPCNT @USE_POPCNT@
+#cmakedefine HAVE_THRUST @HAVE_THRUST@
 #define MPI_FOUND (HAVE_MPILIB && MPIRPC_FOUND && defined(USE_MPI))
 #cmakedefine VECLEN @VECLEN@
 #cmakedefine VERSION "@VERSION@"

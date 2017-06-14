@@ -30,6 +30,11 @@
 #include <functional>
 #include <cstdlib>
 #include <limits>
+#ifdef HAVE_THRUST
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/for_each.h>
+#endif
 
 int main(int argc, char** argv)
 {

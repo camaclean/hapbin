@@ -40,8 +40,8 @@ namespace mpirpc
  * and execute the parameters in the order in which they appear. This is necessary
  * for correctness when side effects are important.
  */
-struct Passer {
-    Passer(...) {}
+struct passer {
+    passer(...) {}
 };
 
 template<typename F>

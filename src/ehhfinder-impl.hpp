@@ -17,6 +17,8 @@
  *
  */
 
+#include "config.h"
+
 template <bool Binom>
 void EHHFinder::calcBranch(HapMap* hm, HapMap::PrimitiveType* parent, std::size_t parentcount, HapMap::PrimitiveType* branch, std::size_t& branchcount, std::size_t currLine, double freq, std::size_t branchCutoff, double &probs, std::size_t& singlecount, std::size_t maxBreadth, bool* overflow)
 {
